@@ -7,9 +7,11 @@ import ij.gui.DialogListener;
 import java.awt.image.BufferedImage;
 import java.awt.*;
 import java.awt.image.*;
-
-import static com.googlecode.javacv.cpp.opencv_core.*;
-import static com.googlecode.javacv.cpp.opencv_imgproc.*;
+import org.bytedeco.javacv.*;
+import org.bytedeco.javacv.Java2DFrameUtils;
+import org.bytedeco.javacpp.*;
+import static org.bytedeco.javacpp.opencv_core.*;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
 
 
  /*
@@ -18,6 +20,8 @@ import static com.googlecode.javacv.cpp.opencv_imgproc.*;
  *By Qingzong TSENG 2011/5/19
  *Add preview 2012/5/6
  *Using javacv, javacpp and opencv 2.3  2012/5/10
+ *Using javacv, javacpp 0.10 2015/2/6
+ *Using javacv, javacpp 1.4.4 2019/3/17
  */
  
  
@@ -124,7 +128,7 @@ public class adaptiveThr_ implements ExtendedPlugInFilter, DialogListener {
         
         method = mm[gd.getNextChoiceIndex()];
         bSize = (int) gd.getNextNumber();
-        param1 = (double)gd.getNextNumber();
+        param1 = gd.getNextNumber();
         output = gd.getNextBoolean();
         pv = gd.getPreviewCheckbox().getState();
         
@@ -153,17 +157,21 @@ public class adaptiveThr_ implements ExtendedPlugInFilter, DialogListener {
     
     public void run(ImageProcessor ip) {
         
+        Loader.load(opencv_core.class);
+        
         if(bSize%2!=1){             //force bSize to be odd number, otherwise take 3 as default value to avoid crash during preview
             bSize = 3;
         }
         
         bi1 = ip.getBufferedImage();
-        IplImage ipl = IplImage.createFrom(bi1);
+        //IplImage ipl = IplImage.createFrom(bi1);
+        IplImage ipl = Java2DFrameUtils.toIplImage(bi1);
         IplImage res = IplImage.create(ipl.width(), ipl.height(), IPL_DEPTH_8U, 1);
        
         cvAdaptiveThreshold(ipl, res, maxValue, method, tType, bSize, param1);
 
-        bi2 = res.getBufferedImage();
+        //bi2 = res.getBufferedImage();
+        bi2 = Java2DFrameUtils.toBufferedImage(res);
         ByteProcessor resultBb = new ByteProcessor(bi2);
         
         res.release();
